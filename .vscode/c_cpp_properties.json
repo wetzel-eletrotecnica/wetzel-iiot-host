@@ -1,0 +1,46 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${IDF_PATH}/components/**",
+                "${MDF_PATH}/components/**",
+                "${env:USERPROFILE}\\Documents\\esp-frameworks\\esp-components\\arduino"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        },
+        {
+            "name": "ESP-IDF",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "includePath": [
+                "${IDF_PATH}/components/**",
+                "${MDF_PATH}/components/**",
+                "${workspaceFolder}/**",
+                "${ESP_COMPONENTS_PATH}/**"
+            ],
+            "browse": {
+                "path": [
+                    "${IDF_PATH}/components",
+                    "${MDF_PATH}/components/**",
+                    "${workspaceFolder}",
+                    "${ESP_COMPONENTS_PATH}"
+                ],
+                "limitSymbolsToIncludedHeaders": false
+            },
+            "compilerPath": "${IDF_TOOLS_PATH}/tools/xtensa-esp32-elf/esp-2021r1-8.4.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-g++.exe",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        }
+    ],
+    "version": 4
+}
