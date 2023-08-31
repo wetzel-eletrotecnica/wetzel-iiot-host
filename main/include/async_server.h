@@ -44,6 +44,7 @@ class AsyncServer {
     static esp_err_t ans_get_handler(httpd_req_t* req);
     static esp_err_t upgrade_post_handler(httpd_req_t* req);
     static esp_err_t direct_msg_handler(httpd_req_t* req);
+    static esp_err_t report_msg_handler(httpd_req_t* req);
     static httpd_handle_t start_webserver(void);
     static void stop_webserver(httpd_handle_t server);
     static void disconnect_handler(void* arg, esp_event_base_t event_base,
@@ -77,6 +78,7 @@ class AsyncServer {
     static const httpd_uri_t ans;
     static const httpd_uri_t upgrade;
     static const httpd_uri_t direct;
+    static const httpd_uri_t report_dados;
     // static WiFiServer* server2;
 };
 }  // namespace Wetzel

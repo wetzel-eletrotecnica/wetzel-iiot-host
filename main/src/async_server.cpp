@@ -58,6 +58,14 @@ const httpd_uri_t AsyncServer::direct = {.uri = "/direct",
                                          .handler = direct_msg_handler,
                                          .user_ctx = NULL};
 
+/**
+ * Estrutura para criar uma rota para enviar o report gasto das luminarias
+*/
+const httpd_uri_t AsyncServer::report_dados = { .uri = "/report",
+                                                .method = HTTP_GET,
+                                                .handler = report_msg_handler,
+                                                .user_ctx = NULL};
+
 uint32_t _http_timer_counter = 0;
 
 void AsyncServer::begin() {
@@ -230,10 +238,8 @@ bool AsyncServer::_att_wifi_ssid(bool send_data) {
 void AsyncServer::_update_ssid(char* msg) {
     MY_LOGI("msg completa: %s", msg);
     WiFi* wifi = WiFi::getInstance();
-    uint8_t len = strlen(msg);
     bool ssid_change = true;
     bool status_change = true;
-    bool password_change = true;
     uint8_t status;
     char* next_char;
 
@@ -552,6 +558,44 @@ esp_err_t AsyncServer::ans_get_handler(httpd_req_t* req) {
     return ESP_OK;
 }
 
+/**
+ * @brief Retorna para o aplicativo a informação solicitada 
+ * @note Callback para tratar a requisição do aplicativo
+ * @param req httpd_req_t contendo as informações da solicitação
+*/
+esp_err_t AsyncServer::report_msg_handler(httpd_req_t* req) 
+{
+    char buf[100];
+    int ret;
+    size_t remaining = req->content_len;
+
+    while (remaining > 0) {
+        /* Read the data for the request */
+        if ((ret = httpd_req_recv(req, buf,
+                                  std::min(remaining, sizeof(buf)))) <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                /* Retry receiving if timeout occurred */
+                continue;
+            }
+            return ESP_FAIL;
+        }
+
+        /* Send back the same data */
+        httpd_resp_send_chunk(req, buf, ret);
+        remaining -= ret;
+
+        /* Log data received */
+        ESP_LOGI(TAG, "=========== RECEIVED DATA ==========");
+        ESP_LOGI(TAG, "%.*s", ret, buf);
+        ESP_LOGI(TAG, "====================================");
+    }
+
+    // End response
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+
 esp_err_t AsyncServer::direct_msg_handler(httpd_req_t* req) {
     MY_LOGI("Recebido requisicao HTTP GET /direct: %s", req->uri);
     char buffer[1500];
@@ -775,6 +819,8 @@ httpd_handle_t AsyncServer::start_webserver(void) {
         httpd_register_uri_handler(server, &ans);
         httpd_register_uri_handler(server, &out);
         httpd_register_uri_handler(server, &direct);
+        // Inserir o report do relatorio
+        httpd_register_uri_handler(server, &report_dados);
 
         // httpd_register_uri_handler(server, &upgrade);
         return server;
@@ -833,10 +879,7 @@ void AsyncServer::_uart_receive_response_task(void* arg) {
     MY_LOGI("Iniciando _uart_receive_response_task")
     char ent[1500];
     bool request_is_complete = false;
-    uint32_t request_timer,
-        REQUEST_TIMEOUT = ASYNC_SRV_D_RESPONSE_REQUEST_TIMEOUT_MS;
-    uint32_t client_wait_timer,
-        CLIENT_WAIT_TIMEOUT = ASYNC_SRV_CLIENT_RESPONSE_REQUEST_TIMEOUT_MS;
+    uint32_t request_timer;
     bool request_timeout = false;
     request_timer = millis();
 

@@ -6,6 +6,8 @@
 #include <map>
 #include <queue>
 
+#include <freertos/portmacro.h>
+
 #include "real_time_clock.h"
 #include "sd_card_handler.h"
 

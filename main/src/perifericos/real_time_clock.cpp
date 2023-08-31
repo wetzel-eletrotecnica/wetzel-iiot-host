@@ -1,154 +1,139 @@
 #include "real_time_clock.h"
 
+#include <esp_system.h>
+#include <sys/time.h>
+
 #include <Wire.h>
 #include <driver/gpio.h>
-#include <freertos/semphr.h>
-#include <freertos/task.h>
 #include <limits.h>
+#include <cstring>
+#include <sstream>
+#include <freertos/timers.h>
 
+#include <time.h>
+#include <sys/time.h>
+
+#include "TimeLib.h"
 #include "configuration.h"
 #include "debug.h"
 
 namespace Wetzel {
 
-static const char* TAG = __FILE__;
+bool RealTimeClock::__isModuleStart = 0;
+tmElements_t RealTimeClock::obj_time;
+RealTimeClock *RealTimeClock::_instance = nullptr;
 
-RTC_DS3231 RealTimeClock::_rtc;
-RealTimeClock* RealTimeClock::_instance = nullptr;
-uint32_t RealTimeClock::_unixSeconds;
-uint16_t RealTimeClock::_unixDay;
-DateTime RealTimeClock::_dateTime;
-SemaphoreHandle_t RealTimeClock::_rtc_mutex;
-TaskHandle_t RealTimeClock::update_local_clock_1s_handle = NULL;
+RealTimeClock::RealTimeClock() {}
 
-bool RealTimeClock::lost_track = false;
+/**
+ * @brief Inicializa a estrutura para monitorar o tempo em unix
+ * @return esp_err_t 
+*/
+esp_err_t RealTimeClock::begin() 
+{
+    // Cleaning the variables
+    std::memset(&obj_time, 0, sizeof(obj_time));
+    // Forçar 0 para inciar em 1970
+    configureRtc(0);
+    __isModuleStart = 1;
+    // Se quiser ver o horário (APENAS PARA DEBUG)
+    TimerHandle_t t_d = xTimerCreate("PrintDataHourRTC", 1000, true, nullptr, PrintDataHourRTC);
+    xTimerStart(t_d, 0);
 
-RealTimeClock::RealTimeClock() {
-    _unixSeconds = _dateTime.unixtime();
+    return ESP_OK;
 }
 
-void RealTimeClock::update_local_clock_1s_interrupt(void* task_handle) {
-    TaskHandle_t* handle = (TaskHandle_t*)task_handle;
-    BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
-
-    xTaskNotifyFromISR(*handle, 0, eNoAction, &pxHigherPriorityTaskWoken);
-}
-
-void RealTimeClock::update_local_clock_1s_handler(void* arg) {
-    uint32_t ulInterruptStatus;
-
-    while (1) {
-        xTaskNotifyWait(0, ULONG_MAX, &ulInterruptStatus, portMAX_DELAY);
-
-        if (xSemaphoreTake(_rtc_mutex, 1000 / portTICK_RATE_MS) !=
-            pdTRUE) { 
-            lost_track = true;
-            return;
-        }
-        if (lost_track) {
-            _dateTime = _rtc.now();
-            _unixSeconds = _dateTime.unixtime();
-            lost_track = false;
-        } else {
-            _unixSeconds++;
-            _dateTime = DateTime(_unixSeconds);
-        }
-        xSemaphoreGive(_rtc_mutex);
-    }
-}
-
+/**
+ * @brief Destrutor
+*/
 RealTimeClock::~RealTimeClock() {
     delete _instance;
 }
 
-esp_err_t RealTimeClock::begin(TwoWire* wireInstance) {
+/**
+ * @brief Substitui o unix tempo do device pelo parametro
+ * @param new_unix_seconds novo tempo poxis
+ * @return esp_err_t
+*/
+esp_err_t RealTimeClock::configureRtc(uint32_t new_unix_seconds) 
+{
+    // Estrutura temporária para a funcao abaixo 
+    struct timeval tv; 
 
-    if (rtc_initialized) {
-        MY_LOGE("RTC já inicializado");
-        return ESP_FAIL;
+    if (new_unix_seconds > 0)
+    {
+        tv.tv_sec = new_unix_seconds - 1020 ;// - 10800 - 1080;
+    }
+    else
+    {
+        /* escrever zero dá problema, então começa 1 segundo depois de 1970 */
+        tv.tv_sec = 1;
     }
 
-    if (_rtc.begin(wireInstance) == false) {
-        return ESP_FAIL;
-    }
-
-    _rtc.writeSqwPinMode(Ds3231SqwPinMode::DS3231_SquareWave1Hz);
-
-    _rtc_mutex = xSemaphoreCreateMutex();
-
-    gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_INTR_POSEDGE;
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = 1ULL << SQW_GPIO;
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-
-    ESP_ERROR_CHECK(gpio_config(&io_conf));
-    ESP_ERROR_CHECK(gpio_install_isr_service(ESP_INTR_FLAG_LEVEL3));
-    BaseType_t xReturned = pdFAIL;
-    update_local_clock_1s_handle = NULL;
-    xReturned = xTaskCreate(
-        update_local_clock_1s_handler, /* Function that implements the task. */
-        "Update_Local_Clock_Task",     /* Text name for the task. */
-        2056,                          /* Stack size in words, not bytes. */
-        NULL,                          /* Parameter passed into the task. */
-        UPDATE_LOCAL_CLOCK_TASK_PRIORITY, /* Priority at which the task is created. */
-        &update_local_clock_1s_handle); /* Used to pass out the created task's handle. */
-    if (xReturned != pdPASS) {
-        return ESP_FAIL;
-    }
-
-    ESP_ERROR_CHECK(update_local_clock_with_rtc());
-
-    ESP_ERROR_CHECK(gpio_isr_handler_add(SQW_GPIO,
-                                         update_local_clock_1s_interrupt,
-                                         &update_local_clock_1s_handle));
-
-    rtc_initialized = true;
+    // Configura o RTC com a hora atual 
+    settimeofday(&tv, 0);
 
     return ESP_OK;
 }
 
-esp_err_t RealTimeClock::update_local_clock_with_rtc() {
-    if (xSemaphoreTake(_rtc_mutex, 1000 / portTICK_RATE_MS) !=
-        pdTRUE) {  // TODO colocar método de segurança caso falhe
-        return ESP_FAIL;
-    }
-    _dateTime = _rtc.now();
-    _unixSeconds = _dateTime.unixtime();
-    _unixDay = _unixSeconds / (60 * 60 * 24);
-    xSemaphoreGive(_rtc_mutex);
-    return ESP_OK;
+/**
+ * @brief Retorna o tempo unix atual em segundos
+ * @return uint32_t
+*/
+uint32_t RealTimeClock::unixSeconds() const 
+{
+    time_t unix_sec_time = time(NULL);
+    return second(unix_sec_time);
 }
 
-esp_err_t RealTimeClock::configureRtc(uint32_t new_unix_seconds) {
-    esp_err_t err;
-    DateTime new_date_time(new_unix_seconds);
-    _rtc.adjust(new_date_time);
-    err = update_local_clock_with_rtc();
-    return err;
+/**
+ * @brief Retorna o unix time do dia atual
+ * @return uint32_t
+*/
+uint32_t RealTimeClock::unixDay() const 
+{
+    time_t unix_day_time = time(NULL);
+    return day(unix_day_time);
 }
 
-RTC_DS3231* RealTimeClock::rtc() {
-    return &_rtc;
+/**
+ * @brief Retorna uma cópia do objeto de tempo do sistema
+ * @return tmElements_t
+*/
+tmElements_t RealTimeClock::dateTime() const
+{
+    tmElements_t buffer;
+    std::memcpy(&buffer, &obj_time, sizeof(tmElements_t));
+    return buffer;
 }
 
-uint32_t RealTimeClock::unixSeconds() const {
-    return _unixSeconds;
-}
-
-uint16_t RealTimeClock::unixDay() const {
-    return _unixDay;
-}
-
-DateTime RealTimeClock::dateTime() const {
-    return _dateTime;
-}
-
+/**
+ * @brief Retorna o Objeto de classe
+ * @return RealTimeClock
+*/
 RealTimeClock* RealTimeClock::getInstance() {
     if (_instance == nullptr) {
         _instance = new RealTimeClock();
     }
     return _instance;
 }
+
+void RealTimeClock::PrintDataHourRTC(void * args)
+{
+    std::stringstream buffer;
+    
+    // Pega horario do RTC  
+    time_t time_in_seconds = time(NULL);
+    
+    buffer << hour(time_in_seconds)   << ":" 
+           << minute(time_in_seconds) << ":" 
+           << second(time_in_seconds) << "_"
+           << day(time_in_seconds)    << "/"
+           << month(time_in_seconds)  << "/"
+           << year(time_in_seconds);
+
+    ESP_LOGI("--RTC--", "%s", buffer.str().c_str());
+}
+
+
 }  // namespace Wetzel

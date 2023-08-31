@@ -10,6 +10,9 @@
 #include "real_time_clock.h"
 #include "sd_card_handler.h"
 
+#include <string.h>
+#include "TimeLib.h"
+
 static const char* TAG = __FILE__;
 
 namespace Wetzel {
@@ -90,11 +93,9 @@ void ReportHandler::report_entry_handler(void* arg) {
 }
 
 void ReportHandler::writing_file_handler(void* arg) {
-    uint32_t ulInterruptStatus;
     TickType_t last_execution_time;
     const TickType_t frequency = pdMS_TO_TICKS(MS_PERIOD_TO_WRITE_FILE);
     last_execution_time = xTaskGetTickCount();
-    RealTimeClock* rtc = RealTimeClock::getInstance();
     // first:id     |   second:report_informations
     std::unordered_map<uint8_t, report_sampling_param_t> entradas;
 
@@ -103,8 +104,7 @@ void ReportHandler::writing_file_handler(void* arg) {
 
         bool new_entry_added = false;
         char file_name[20];
-        createFileName(file_name, _rtc->dateTime().year(), _rtc->dateTime().month(),
-                       _rtc->dateTime().day(), "txt");
+        createFileName(file_name, _rtc->dateTime().Year, _rtc->dateTime().Month, _rtc->dateTime().Day, "txt");
 
         if (xSemaphoreTake(_writing_queue_mutex, portTICK_RATE_MS) != pdTRUE) {
             continue;
@@ -259,8 +259,6 @@ esp_err_t ReportHandler::begin() {
 }
 
 esp_err_t ReportHandler::add_entry_to_report_msg_buffer(report_msg_entry_t& report_msg) {
-    esp_err_t err;
-
     if (xSemaphoreTake(_report_msg_queue_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
         return ESP_FAIL;
     }
@@ -303,8 +301,6 @@ esp_err_t ReportHandler::add_device_to_report_info_map(device_mac_t mac, uint8_t
 }
 
 esp_err_t ReportHandler::add_report_to_writing_buffer(report_entry_t& report) {
-    esp_err_t err;
-
     if (xSemaphoreTake(_writing_queue_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
         return ESP_FAIL;
     }

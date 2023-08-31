@@ -12,6 +12,7 @@ idf_component_register(
         "src/wifi/wifi_event_listener.cpp"
         "src/wifi/wifi_wetzel_esp32.cpp"
         "src/wifi/wifi_wetzel_utils.cpp"
+        "src/perifericos/Time.cpp"
     INCLUDE_DIRS 
         "."
         "include"
@@ -20,5 +21,5 @@ idf_component_register(
         "include/relatorio"
         "include/wifi"
     REQUIRES
-        arduino esp_http_server sdmmc RTC_lib fatfs
+        arduino esp_http_server sdmmc fatfs
 )

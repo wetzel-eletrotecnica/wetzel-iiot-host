@@ -2,13 +2,14 @@
 #define ESP32
 #endif
 
-#include <HardwareSerial.h>
+#include <freertos/FreeRTOS.h>
 #include <driver/gpio.h>
 #include <driver/uart.h>
 #include <esp_http_server.h>
 #include <esp_intr_alloc.h>
 #include <esp_wifi.h>
 #include <macros.h>
+#include <HardwareSerial.h>
 
 #include "async_server.h"
 #include "configuration.h"
@@ -30,7 +31,7 @@ void app_main();
 
 void app_main() {
     uart_config_t uart_config = {
-        .baud_rate = 230400,
+        .baud_rate = 115200, //230400,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -58,6 +59,8 @@ void app_main() {
     // IF REPORT
     Wetzel::CartaoSD* card = Wetzel::CartaoSD::getInstance();
     card->begin(SPI_MOSI_GPIO, SPI_MISO_GPIO, SPI_SCLK_GPIO, SPI_CS_GPIO);
+
+    /* Implementação do RTC do esp sem módulo */
     Wetzel::RealTimeClock* rtc = Wetzel::RealTimeClock::getInstance();
     rtc->begin();
     Wetzel::ReportHandler* report_handler =
