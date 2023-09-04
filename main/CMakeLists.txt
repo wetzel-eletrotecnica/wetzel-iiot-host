@@ -1,11 +1,11 @@
 idf_component_register(
     SRCS 
         "src/esp-interface.cpp"
-        "src/async_server.cpp"
+        "src/async_server/async_server.cpp"
         "src/comum/nvs_wetzel_handler.cpp"
         "src/server_html_utils.cpp"
-        "src/perifericos/sd_card_handler"  
-        "src/perifericos/real_time_clock.cpp"
+        "src/perifericos/sd_card_handler.cpp"  
+        "src/real_time_clock/real_time_clock.cpp"
         "src/relatorio/report_direct_msg_handlers.cpp"
         "src/relatorio/report_handler.cpp"
         "src/wifi/wifi_direct_msg_handlers.cpp"
@@ -13,6 +13,8 @@ idf_component_register(
         "src/wifi/wifi_wetzel_esp32.cpp"
         "src/wifi/wifi_wetzel_utils.cpp"
         "src/perifericos/Time.cpp"
+        "src/local_storage/local_storage.cpp"
+        "lib/Memory/Memory.cpp"
     INCLUDE_DIRS 
         "."
         "include"
@@ -20,6 +22,10 @@ idf_component_register(
         "include/perifericos"
         "include/relatorio"
         "include/wifi"
+        "include/async_server"
+        "include/real_time_clock"
+        "include/local_storage"
+        "lib/Memory"
     REQUIRES
         arduino esp_http_server sdmmc fatfs
 )

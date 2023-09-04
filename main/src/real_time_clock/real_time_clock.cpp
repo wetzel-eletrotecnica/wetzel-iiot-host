@@ -25,10 +25,6 @@ RealTimeClock *RealTimeClock::_instance = nullptr;
 
 RealTimeClock::RealTimeClock() {}
 
-/**
- * @brief Inicializa a estrutura para monitorar o tempo em unix
- * @return esp_err_t 
-*/
 esp_err_t RealTimeClock::begin() 
 {
     // Cleaning the variables
@@ -43,18 +39,10 @@ esp_err_t RealTimeClock::begin()
     return ESP_OK;
 }
 
-/**
- * @brief Destrutor
-*/
 RealTimeClock::~RealTimeClock() {
     delete _instance;
 }
 
-/**
- * @brief Substitui o unix tempo do device pelo parametro
- * @param new_unix_seconds novo tempo poxis
- * @return esp_err_t
-*/
 esp_err_t RealTimeClock::configureRtc(uint32_t new_unix_seconds) 
 {
     // Estrutura temporária para a funcao abaixo 
@@ -76,30 +64,18 @@ esp_err_t RealTimeClock::configureRtc(uint32_t new_unix_seconds)
     return ESP_OK;
 }
 
-/**
- * @brief Retorna o tempo unix atual em segundos
- * @return uint32_t
-*/
 uint32_t RealTimeClock::unixSeconds() const 
 {
     time_t unix_sec_time = time(NULL);
     return second(unix_sec_time);
 }
 
-/**
- * @brief Retorna o unix time do dia atual
- * @return uint32_t
-*/
 uint32_t RealTimeClock::unixDay() const 
 {
     time_t unix_day_time = time(NULL);
     return day(unix_day_time);
 }
 
-/**
- * @brief Retorna uma cópia do objeto de tempo do sistema
- * @return tmElements_t
-*/
 tmElements_t RealTimeClock::dateTime() const
 {
     tmElements_t buffer;
@@ -107,10 +83,7 @@ tmElements_t RealTimeClock::dateTime() const
     return buffer;
 }
 
-/**
- * @brief Retorna o Objeto de classe
- * @return RealTimeClock
-*/
+
 RealTimeClock* RealTimeClock::getInstance() {
     if (_instance == nullptr) {
         _instance = new RealTimeClock();

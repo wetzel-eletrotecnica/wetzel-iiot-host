@@ -55,6 +55,11 @@ typedef struct report_entry_t {
     uint32_t unix_seconds;
 };
 
+/**
+ * @brief Calcula a integral de dois pontos passados pela estrutura report_sampling_param_t
+ * @param param Parametros para realizar a integral
+ * @return Média do PWM aplicado ao controlador
+*/
 uint8_t calculate_average_pwm(report_sampling_param_t param);
 
 class ReportHandler {
