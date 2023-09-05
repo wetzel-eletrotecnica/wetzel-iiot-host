@@ -2,13 +2,13 @@
 #define local_storage_H_
 
 #include <cstring>
+#include <string>
 #include <stdint.h>
-#include <map>
-#include <list>
 #include <esp_system.h>
 #include <esp_err.h>
 #include "debug.h"
 
+namespace Wetzel {
 class local_storage
 {
 public:
@@ -44,14 +44,7 @@ public:
      * @brief Retorna o objeto da classe
      * @return Ponteiro da classe local_storage
     */
-    local_storage * GetObjs();
-
-    /**
-     * @brief Salva na estrutura o valor do KWh
-     * @param value Valor em reais flutuante do kilowatt
-     * @return 1 - Sucesso, 0 - Falhou
-    */
-    bool RecordKWHvalue(float value);
+    static local_storage * GetObjs();
 
     /**
      * @brief Grava no buffer o valor pwm entregue pela rede
@@ -75,7 +68,7 @@ public:
      * @param day dia
      * @return std::string com a string pronta
     */
-    std::string ReturnDayPointByDayAndMonthIndex(month_type_t month, uint8_t day);
+    std::string ReturnDayPointByDayAndMonthIndex(month_type_t month, uint8_t day, uint16_t watts_luminaria, uint8_t qnt_luminarias);
 
     /**
      * @brief Retorna uma string com a média do mês
@@ -83,38 +76,25 @@ public:
      * @param month Mês
      * @return std::string com a string pronta 
     */
-    std::string ReturnMonthPointByMonthIndex(month_type_t month);
+    std::string ReturnMonthPointByMonthIndex(month_type_t month, uint16_t watts_luminaria, uint8_t qnt_luminarias);
 
     /**
-     * @brief Defini a o mês e dia atual na classe
-     * @param month Mês
-     * @param day Dia
-     * @return 1 - Sucesso, 0 - Falhou 
+     * @brief Salva o buffer temporario na estrutra de dados
+     * @return 1 - Sucesso, 0 - Falhou
     */
-    bool SetCurrentMonthAndDay(char * month, char *  day);
+    bool UpdateValueonStruct();
 
 private:
+    /**
+     * @brief Retorna a posição do mês no vetor
+    */
+    uint8_t ReturnVectorIndexByMonth(month_type_t month);
 
     /**
      * @brief Construtor privado
     */
     local_storage(/* args */);
 
-    /* Organização dos dados que serão armazenados */
-    static std::map< month_type_t, std::list<uint8_t>> _pwm_month;
-    static std::list<uint8_t> _pwm_dia;
-
-    typedef struct {
-        uint8_t _hora[24];
-    } dia_type_t;
-
-    typedef struct {
-        dia_type_t _dia[31];
-        uint8_t _mes;
-    } mes_type_t;
-
-    mes_type_t _mes_storage[8];
-    uint8_t buffer_storage;
 
     /**
      * @brief Carrega as informações da NVS se não estiver corrupta
@@ -125,7 +105,7 @@ private:
     /**
      * @brief Pega o dia que finalizou e armazena na NVS
     */
-    void NextDay();
+    void RecordOnNVStheFinishDay();
 
     /**
      * @brief Pega o valor do buffer temporario e armazena na estrutura
@@ -133,11 +113,25 @@ private:
     */
     static void UpdateStructWhich10min(void * args);
 
-    /* storage the current location on struct */
-    static uint8_t _current_day;
-    static month_type_t _current_month;
-    float _kwh_price = 0;
+    /**
+     * @brief Retorna o consumo total do mês
+     * @param month Mês de referência
+    */
+    uint32_t ReturnTotalInWattsSpendOnMonthByIndex(month_type_t month, uint16_t watts_luminaria, uint8_t qnt_luminarias);
+
+    /* Organização dos dados que serão armazenados */
+    typedef struct {
+        uint8_t _hora[24];
+    } dia_type_t;
+
+    typedef struct {
+        dia_type_t _dia[31];
+        month_type_t _mes;
+    } mes_type_t;
+
+    mes_type_t _mes_storage[8];
+    uint8_t buffer_storage;
     static local_storage * _ptr_local_storage;
 };
-
+} // namespace Wetzel
 #endif

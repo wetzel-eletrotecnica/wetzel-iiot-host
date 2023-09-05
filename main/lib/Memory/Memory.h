@@ -9,6 +9,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 
+namespace Wetzel {
 class Memory{
   public:
 
@@ -75,4 +76,5 @@ class Memory{
     ~Memory();
 };
 
+} // namespace Wetzel 
 #endif // _MEMORY_H_

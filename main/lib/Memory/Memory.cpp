@@ -1,5 +1,7 @@
 #include "Memory.h"
 
+namespace Wetzel {
+
 Memory* Memory::ptr_memory = nullptr;
 
 /**
@@ -154,3 +156,4 @@ esp_err_t Memory::GetRequiredSize(const char* name_space, size_t& required_size,
   return ESP_OK;
 }
 
+} // namespace Wetzel 
