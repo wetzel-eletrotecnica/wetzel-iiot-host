@@ -13,8 +13,10 @@ idf_component_register(
         "src/wifi/wifi_wetzel_esp32.cpp"
         "src/wifi/wifi_wetzel_utils.cpp"
         "src/perifericos/Time.cpp"
-        "src/local_storage/local_storage.cpp"
         "lib/Memory/Memory.cpp"
+        # Implementacao modulo relatorio
+        "lib/API_ModuloRelatorio/local_storage/local_storage.cpp"
+        "lib/API_ModuloRelatorio/API_ModuloRelatorio.cpp"
     INCLUDE_DIRS 
         "."
         "include"
@@ -24,8 +26,13 @@ idf_component_register(
         "include/wifi"
         "include/async_server"
         "include/real_time_clock"
-        "include/local_storage"
         "lib/Memory"
+        # Implementacao modulo relatorio
+        "lib/API_ModuloRelatorio/local_storage"
+        "lib/API_ModuloRelatorio"
     REQUIRES
         arduino esp_http_server sdmmc fatfs
 )
+
+# defini a versão do c++ usado no projeto
+target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++17)

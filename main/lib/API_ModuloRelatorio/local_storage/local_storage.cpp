@@ -11,7 +11,8 @@ namespace Wetzel {
  * ====================================================
 */
 static const char* TAG = __FILE__;
-#define MEMORY_FLAG_STORAGE  "relatorio"
+#define MEMORY_POTENCIA_STORAGE  "rela_pote"
+#define MEMORY_LUMINARI_STORAGE  "rela_lumi"
 /**
  * ====================================================
  *                    Static Const
@@ -62,7 +63,7 @@ local_storage * local_storage::GetObjs()
 bool local_storage::RecordPWMonStorage(uint8_t value)
 {
     // Faz uma média para ir acumulando a mudança
-    buffer_storage = (buffer_storage + value) / 2;
+    _buffer_storage = (_buffer_storage + value) / 2;
     return true;
 }
  
@@ -97,7 +98,7 @@ std::string local_storage::ReturnDayPointByDayAndMonthIndex(month_type_t month, 
         {
             if (_mes_storage[mes_index]._dia[day]._hora[j] > 0)
             {
-                float potencia = _mes_storage[mes_index]._dia[day]._hora[j] * watts_luminaria * qnt_luminarias;
+                double potencia = _mes_storage[mes_index]._dia[day]._hora[j] * watts_luminaria * qnt_luminarias;
                 str_return += std::to_string(j) + ":" + std::to_string(potencia);
                 if ( j < 23)
                 {
@@ -109,18 +110,24 @@ std::string local_storage::ReturnDayPointByDayAndMonthIndex(month_type_t month, 
     return str_return;
 }
 
-
 std::string local_storage::ReturnMonthPointByMonthIndex(month_type_t month, uint16_t watts_luminaria, uint8_t qnt_luminarias)
+{
+    std::string str_return = std::to_string(month) + ":" + std::to_string(ReturnTotalInWattsSpendOnMonthByIndex(month, watts_luminaria, qnt_luminarias));
+    return str_return;
+}
+
+
+std::string local_storage::ReturnAllMonthPoints(uint16_t watts_luminaria, uint8_t qnt_luminarias)
 {
     std::string str_return = "";
 
     uint8_t i;
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 12; i++)
     {
-        if (_mes_storage[i]._mes == month)
+        str_return += ReturnMonthPointByMonthIndex((month_type_t)i, watts_luminaria, qnt_luminarias);
+        if (i < 12 - 1)
         {
-            str_return += std::to_string(month) + ":" + std::to_string(ReturnTotalInWattsSpendOnMonthByIndex(month, watts_luminaria, qnt_luminarias));
-            break;
+            str_return += ",";
         }
     }
     return str_return;
@@ -143,17 +150,14 @@ esp_err_t local_storage::LoadDataFromNVS()
 
     void* data_read_void_ptr = static_cast<void*>(&_mes_storage);
 
-    err = local_m_memo->GetDataOnMemory(MEMORY_FLAG_STORAGE, &data_read_void_ptr, max_size_struct_data, "storage");
-    if (err == ESP_OK)
-    {
-
-    }
+    err = local_m_memo->GetDataOnMemory(MEMORY_POTENCIA_STORAGE, &data_read_void_ptr, max_size_struct_data, "storage");
     return err;
 }
 
 
 void local_storage::RecordOnNVStheFinishDay()
 {
+    // FIXME: Aqui deveria retorna o erro da operação
     Memory * m_memo = Memory::GetObjectMemory();
     m_memo->Memory::Begin();
     
@@ -161,7 +165,7 @@ void local_storage::RecordOnNVStheFinishDay()
 
     void* data_read_void_ptr = static_cast<void*>(&_mes_storage);
 
-    m_memo->RecordOnMemory(MEMORY_FLAG_STORAGE, &data_read_void_ptr, max_size_struct_data, "storage");
+    m_memo->RecordOnMemory(MEMORY_POTENCIA_STORAGE, &data_read_void_ptr, max_size_struct_data, "storage");
 }
 
 void local_storage::UpdateStructWhich10min(void * args)
@@ -178,8 +182,8 @@ bool local_storage::UpdateValueonStruct()
     // Pega o valor do buffer e armazena na hora em que foi coletado
 
     // FIXME: Aqui é operação sensivel, previsa de semaphoro
-    _mes_storage[ReturnVectorIndexByMonth((month_type_t)current_time.Month)]._dia[current_time.Day]._hora[current_time.Hour] = buffer_storage;
-    buffer_storage = 0;
+    _mes_storage[ReturnVectorIndexByMonth((month_type_t)current_time.Month)]._dia[current_time.Day]._hora[current_time.Hour] += _buffer_storage;
+    _buffer_storage = 0;
 
     // Verifica se virou o dia
     if (current_time.Hour == 0 && current_time.Year > 20 /* faltou um parametro para evitar duplicada no mesmo horaio */)
@@ -196,13 +200,16 @@ uint32_t local_storage::ReturnTotalInWattsSpendOnMonthByIndex(month_type_t month
     // Vou navegar no vetor para encontrar o mes de referencia
     uint8_t j, mes_index = ReturnVectorIndexByMonth(month);
 
-    for (j = 0; j < 31 /* dias */ ; j++)
+    if (mes_index != 255)
     {
-        // Agora vou varrer todas as horas do dia
-        uint8_t k;
-        for (k = 0; k < 24 /* horas */; k++)
+        for (j = 0; j < 31 /* dias */ ; j++)
         {
-            sun += _mes_storage[mes_index]._dia[j]._hora[k] * watts_luminaria * qnt_luminarias;
+            // Agora vou varrer todas as horas do dia
+            uint8_t k;
+            for (k = 0; k < 24 /* horas */; k++)
+            {
+                sun += _mes_storage[mes_index]._dia[j]._hora[k] * watts_luminaria * qnt_luminarias;
+            }
         }
     }
     return sun;
@@ -212,14 +219,14 @@ uint32_t local_storage::ReturnTotalInWattsSpendOnMonthByIndex(month_type_t month
 uint8_t local_storage::ReturnVectorIndexByMonth(month_type_t month)
 {
     uint8_t i;
-    for (i = 0; i < 8 /* mes */ ; i++)
+    for (i = 0; i < sizeof(_mes_storage) /* mes */ ; i++)
     {
         if (_mes_storage[i]._mes == month)
         {
             return i;
         }
     }
-    return 0;
+    return 255;
 }
 
 } // namespace Wetzel 

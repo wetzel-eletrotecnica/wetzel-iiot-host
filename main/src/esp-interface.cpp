@@ -19,6 +19,10 @@
 #include "sd_card_handler.h"
 #include "wifi_wetzel_esp32.h"
 
+/* Modulo de relatório */
+#include "local_storage.h"
+#include "API_ModuloRelatorio.h"
+
 static const char* TAG = __FILE__;
 
 void uart2_input_task(void* param);
@@ -68,6 +72,13 @@ void app_main() {
     report_handler->begin();
     // ENDIF
 
+    /* Inicia o backend do módulo de relatório */
+    Wetzel::local_storage * m_storage = Wetzel::local_storage::GetObjs();
+    m_storage->Begin();
+
+    Wetzel::API_ModuloRelatorio * m_relatorio = Wetzel::API_ModuloRelatorio::GetObjs();
+    m_relatorio->Begin();
+
     Wetzel::AsyncServer::begin();
     vTaskDelay(1500 / portTICK_PERIOD_MS);
 
@@ -82,19 +93,19 @@ void app_main() {
     xTimerStart(timer2, 500);
 
     // TEST
-    const int max_n_entry_day = 172800;
-    const int days_a_year = 365;
+    // const int max_n_entry_day = 172800;
+    // const int days_a_year = 365;
 
-    Wetzel::report_entry_t entry = {
-        .device_info =
-            {
-                .id = 12,
-                .qtd_luminarias = 16,
-                .modelo_luminarias = Wetzel::luminaria_type_catalog_t::LUM_17K,
-            },
-        .pwm_value = 211,
-        .unix_seconds = 17280880,
-    };
+    // Wetzel::report_entry_t entry = {
+    //     .device_info =
+    //         {
+    //             .id = 12,
+    //             .qtd_luminarias = 16,
+    //             .modelo_luminarias = Wetzel::luminaria_type_catalog_t::LUM_17K,
+    //         },
+    //     .pwm_value = 211,
+    //     .unix_seconds = 17280880,
+    // };
 
     // for (int i = 0; i < days_a_year; i++) {
     //     char path[20];

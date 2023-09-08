@@ -44,6 +44,13 @@ class AsyncServer {
     static esp_err_t ans_get_handler(httpd_req_t* req);
     static esp_err_t upgrade_post_handler(httpd_req_t* req);
     static esp_err_t direct_msg_handler(httpd_req_t* req);
+
+    /**
+     * @brief Responde o aplitivo com uma informação do módulo de relatório
+     * @note Rota do módulo de relatório retornar informações
+     * @param req Pacote com as informações do solicitante
+     * @return esp_err_t
+    */
     static esp_err_t report_msg_handler(httpd_req_t* req);
     static httpd_handle_t start_webserver(void);
     static void stop_webserver(httpd_handle_t server);

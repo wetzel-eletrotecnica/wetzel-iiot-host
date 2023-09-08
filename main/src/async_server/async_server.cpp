@@ -559,40 +559,69 @@ esp_err_t AsyncServer::ans_get_handler(httpd_req_t* req) {
 }
 
 /**
- * @brief Retorna para o aplicativo a informação solicitada 
- * @note Callback para tratar a requisição do aplicativo
- * @param req httpd_req_t contendo as informações da solicitação
+ * TODO: OPerando aqui 
 */
 esp_err_t AsyncServer::report_msg_handler(httpd_req_t* req) 
 {
-    char buf[100];
-    int ret;
-    size_t remaining = req->content_len;
+    char buffer_url[100];
+    size_t buffer_size = 0;
+    int isOk = 0;
 
-    while (remaining > 0) {
-        /* Read the data for the request */
-        if ((ret = httpd_req_recv(req, buf,
-                                  std::min(remaining, sizeof(buf)))) <= 0) {
-            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
-                /* Retry receiving if timeout occurred */
-                continue;
-            }
-            return ESP_FAIL;
-        }
+    // Obtem a url recebida
+    isOk = httpd_req_recv(req, buffer_url, sizeof(buffer_url));
 
-        /* Send back the same data */
-        httpd_resp_send_chunk(req, buf, ret);
-        remaining -= ret;
-
-        /* Log data received */
-        ESP_LOGI(TAG, "=========== RECEIVED DATA ==========");
-        ESP_LOGI(TAG, "%.*s", ret, buf);
-        ESP_LOGI(TAG, "====================================");
+    // Verifica se a mensagem é valida
+    if (isOk > 0)
+    {
+        // Trata a mensagem
+    
+        // Monta a mensagem para retornar para o servidor
+        // httpd_resp_send(req, striing_retorno, buffer_retorno);
     }
-
-    // End response
-    httpd_resp_send_chunk(req, NULL, 0);
+    else
+    {
+        // Se deu qualquer coisa errada na obteção da mensagem
+        // retorna um erro
+    }
     return ESP_OK;
+
+    // int ret;
+    // size_t remaining = req->content_len;
+
+    // // Obtem a url passada por parametro
+    // MY_LOGI("Recebido requisicao HTTP GET /direct: %s", req->uri);
+    // char buffer[1500];
+    // size_t buffer_max_size = sizeof(buffer);
+    // char param[1000];
+    // char status[6];
+    // size_t buf_len;
+    // bool responses_with_content = false;
+    // bool multiple_responses = false;
+    // char* next_char;
+
+    // http_requests_received++;
+
+    // memset(buffer, 0, buffer_max_size);
+
+    // buf_len = httpd_req_get_url_query_len(req) + 1;
+
+    // if (buf_len > 1) {
+    //     if (httpd_req_get_url_query_str(req, buffer, buf_len) == ESP_OK) {
+    //         ESP_LOGI(TAG, "Found URL query => %s", buffer);
+
+    //         /* Get value of expected key from query string */
+    //         if (httpd_query_key_value(buffer, "text", param, sizeof(param)) ==
+    //             ESP_OK) {
+    //             ESP_LOGI(TAG, "Found URL query parameter => text=%s", param);
+    //         }
+    //     }
+    // }
+    // convert_html_text_to_ascii(param);
+
+
+    // // End response
+    // httpd_resp_send_chunk(req, NULL, 0);
+    // return ESP_OK;
 }
 
 

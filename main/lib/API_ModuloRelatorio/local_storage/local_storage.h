@@ -62,21 +62,34 @@ public:
     static month_type_t ConvertMonthStringInEnum(char * month, size_t size);
 
     /**
-     * @brief Retorna uma string com todas as informações
+     * @brief Retorna uma string contendo o consumo por hora de um dia especifico
      * @note "255,255, ..." -> 24 pontos
      * @param month Mês
      * @param day dia
+     * @param watts_luminaria potencia da luminaria acoplanada no modulo controlador
+     * @param qnt_luminarias quantidade de luminarias conectadas ao modulo controlador
      * @return std::string com a string pronta
     */
     std::string ReturnDayPointByDayAndMonthIndex(month_type_t month, uint8_t day, uint16_t watts_luminaria, uint8_t qnt_luminarias);
 
     /**
-     * @brief Retorna uma string com a média do mês
+     * @brief Retorna uma string com o consumo do mes
      * @note "255,255, ..." -> 31 pontos 
      * @param month Mês
+     * @param watts_luminaria potencia da luminaria acoplanada no modulo controlador
+     * @param qnt_luminarias quantidade de luminarias conectadas ao modulo controlador
      * @return std::string com a string pronta 
     */
     std::string ReturnMonthPointByMonthIndex(month_type_t month, uint16_t watts_luminaria, uint8_t qnt_luminarias);
+
+    /**
+     * @brief Retorna uma string com o consumo de todos os meses do histório
+     * @note "255,255, ..." -> 12 pontos 
+     * @param watts_luminaria potencia da luminaria acoplanada no modulo controlador
+     * @param qnt_luminarias quantidade de luminarias conectadas ao modulo controlador
+     * @return std::string com a string pronta 
+    */
+    std::string ReturnAllMonthPoints(uint16_t watts_luminaria, uint8_t qnt_luminarias);
 
     /**
      * @brief Salva o buffer temporario na estrutra de dados
@@ -94,7 +107,6 @@ private:
      * @brief Construtor privado
     */
     local_storage(/* args */);
-
 
     /**
      * @brief Carrega as informações da NVS se não estiver corrupta
@@ -121,7 +133,7 @@ private:
 
     /* Organização dos dados que serão armazenados */
     typedef struct {
-        uint8_t _hora[24];
+        uint16_t _hora[24];
     } dia_type_t;
 
     typedef struct {
@@ -130,7 +142,7 @@ private:
     } mes_type_t;
 
     mes_type_t _mes_storage[8];
-    uint8_t buffer_storage;
+    uint8_t _buffer_storage;
     static local_storage * _ptr_local_storage;
 };
 } // namespace Wetzel
