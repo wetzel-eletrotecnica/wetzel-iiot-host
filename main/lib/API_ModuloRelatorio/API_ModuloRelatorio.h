@@ -7,128 +7,140 @@
 #include <stdint.h>
 #include <string>
 
-namespace Wetzel {
-class API_ModuloRelatorio
+namespace Wetzel
 {
-public:
-    typedef enum { LUM_17K = 0, LUM_23K, LUM_32K } luminaria_type_t;
-public:
-    /**
-     * @brief Destrutor
-    */
-    ~API_ModuloRelatorio();
+    class API_ModuloRelatorio
+    {
+    public:
+        typedef enum
+        {
+            LUM_INDEF = 0,
+            LUM_17K,
+            LUM_23K,
+            LUM_32K
+        } luminaria_type_t;
 
-    /**
-     * @brief Inicializa a API_ModuloRelatorio
-     * @return esp_err_t
-    */
-    esp_err_t Begin();
+        typedef enum
+        {
+            kReturnHours = 0,
+            kReturnDay,
+            kReturnMonth,
+            kReturnQntLuminaria,
+            kReturnTypeLuminaria,
+            kReturnErro = 255
+        } type_request_http_t;
 
-    /**
-     * @brief Retorna o pedido feito por parametro search_data em return_data
-     * @note APENAS DEVE SER CHAMADO NO ASYNC_SERVER
-     * @note A Informação deve serguir uma das seguinte regras:
-     * @note #define RETURN_PONTOS_EM_HORA   "GET|DD:XX_MM_YYYY"
-     * @note #define RETURN_PONTOS_EM_DIAS   "GET|MM:00_XX_YYYY"
-     * @note #define RETURN_PONTOS_EM_MES    "GET|YY:_00_00_0000"
-     * @note #define SET_QTD_LUMINARIA       "SET|qtd_luminaria:XX|id:XXX"
-     * @note #define SET_TYPE_LUMINARIA      "SET|type_luminaria:XX|id:XXX"
-     * @param search_data Parametros da url que serão usados para buscar informação
-     * @param search_size Tamanaho da search_data
-     * @param return_data Resposta do pedido da search_data
-     * @return 1 - Sucesso , 0 - Falhou (Deve descartar o resultado)
-    */
-    bool DeliveryDataByDataRequest(char * search_data, size_t serach_size, std::string & return_data);
+    public:
+        /**
+         * @brief Destrutor
+         */
+        ~API_ModuloRelatorio();
 
-    /**
-     * @brief Defini o nome número de luminarias na rede
-     * @param id Identificação do controlador
-     * @param qtd_luminaria nova quantidade de luminarias
-     * @return 1 - Sucesso, 0 - Falhou
-    */
-    bool SetNumberLuminarias(uint8_t id, uint8_t qtd_luminaria);
+        /**
+         * @brief Inicializa a API_ModuloRelatorio
+         * @return esp_err_t
+         */
+        esp_err_t Begin();
 
-    /**
-     * @brief Defini o tipo de luminaria presente na rede
-     * @param id Identificação do controlador
-     * @param type_luminaria tipo da luminaria especificada
-     * @return 1 - Sucesso, 0 - Falhou
-    */
-    bool SetTypeLuminarias(uint8_t id, luminaria_type_t type_luminaria);
+        /**
+         * @brief Retorna o pedido feito por parametro search_data em return_data
+         * @note APENAS DEVE SER CHAMADO NO ASYNC_SERVER
+         * @note A Informação deve serguir uma das seguinte regras:
+         * @note parametros recebidos = day=01&month=05&year=2023
+         * @param search_data Parametros da url que serão usados para buscar informação
+         * @param search_size Tamanaho da search_data
+         * @param return_data Resposta do pedido da search_data
+         * @return 1 - Sucesso , 0 - Falhou (Deve descartar o resultado)
+         */
+        bool DeliveryDataByDataRequest(char *search_data, size_t serach_size, std::string &return_data);
 
-    /**
-     * @brief Retorna o objeto da classe
-     * @return Ponteiro da classe API_ModuloRelatorio
-    */
-    static API_ModuloRelatorio * GetObjs();
+        /**
+         * @brief Defini o nome número de luminarias na rede
+         * @param id Identificação do controlador
+         * @param qtd_luminaria nova quantidade de luminarias
+         * @return 1 - Sucesso, 0 - Falhou
+         */
+        bool SetNumberLuminarias(uint8_t id, uint8_t qtd_luminaria);
 
-    /**
-     * @note Singletons derivado do design pattern
-     */
-    API_ModuloRelatorio(API_ModuloRelatorio &other) = delete;
-    void operator=(const API_ModuloRelatorio &) = delete;
+        /**
+         * @brief Defini o tipo de luminaria presente na rede
+         * @param id Identificação do controlador
+         * @param type_luminaria tipo da luminaria especificada
+         * @return 1 - Sucesso, 0 - Falhou
+         */
+        bool SetTypeLuminarias(uint8_t id, luminaria_type_t type_luminaria);
 
-private:
-    /**
-     * @brief Construor privado
-    */
-    API_ModuloRelatorio();
+        /**
+         * @brief Retorna o objeto da classe
+         * @return Ponteiro da classe API_ModuloRelatorio
+         */
+        static API_ModuloRelatorio *GetObjs();
 
-    /**
-     * @brief Obtem os dados armazenados na memoria
-     * @note As informações são populadas de acordo com o APP
-     * @return 1 - Sucesso, 0 - Falhou
-    */
-    bool LoadDataFromNVS();
+        /**
+         * @note Singletons derivado do design pattern
+         */
+        API_ModuloRelatorio(API_ModuloRelatorio &other) = delete;
+        void operator=(const API_ModuloRelatorio &) = delete;
 
-    /**
-     * @brief Grava as informações de _devices_info na NVS
-     * @return 1 - Sucesso, 0 - Falhou
-    */
-    bool RecordDataOnNVS();
+    private:
+        /**
+         * @brief Construor privado
+         */
+        API_ModuloRelatorio();
 
-    /**
-     * @brief Atualiza a variavel de total de luminarias declaradas na rede
-     * @note O valor declarado vem dos registros do aplicativo
-     * @return O total de luminarias declaradas na rede
-    */
-    uint16_t UpdateTotalLumiOnMesh();
+        /**
+         * @brief Obtem os dados armazenados na memoria
+         * @note As informações são populadas de acordo com o APP
+         * @return 1 - Sucesso, 0 - Falhou
+         */
+        bool LoadDataFromNVS();
 
-    /**
-     * @brief Retorna o index do vetor _valid_return_api de acordo com o tipo da msg
-     * @param search_data Mensagem para classificar
-     * @return Index do Vetor _valid_return_api
-    */
-    uint8_t ClassifyMessageReturnIndexVectorAPI(const char* search_data);
+        /**
+         * @brief Grava as informações de _devices_info na NVS
+         * @return 1 - Sucesso, 0 - Falhou
+         */
+        bool RecordDataOnNVS();
 
-    /* Estrutra que armazena as informações na rede */
-    typedef struct {
-        uint8_t mac[6];
-        uint8_t qtd_luminarias;
-        luminaria_type_t modelo_luminarias;
-    } device_report_info_t;
+        /**
+         * @brief Atualiza a variavel de total de luminarias declaradas na rede
+         * @note O valor declarado vem dos registros do aplicativo
+         * @return O total de luminarias declaradas na rede
+         */
+        uint16_t UpdateTotalLumiOnMesh();
 
-    typedef struct {
-        device_report_info_t * _ptr_devices_info;
-        uint8_t _qnt_devices = 0;
-    } device_ptr_t;
+        /**
+         * @brief Retorna o tipo de requisição que está na mensagem
+         * @param search_data Mensagem para classificar
+         * @param day
+         * @param month
+         * @param year
+         * @note Caso a requisição não for compativél com os parametros, seta zero
+         * @return type_request_device_t
+         */
+        type_request_http_t ClassifyMessageReturn(const char *search_data, uint8_t &day, uint8_t &month, uint8_t &year);
 
-    /* Variaveis */
-    device_ptr_t _devices_info;
-    uint16_t total_lumina_on_mesh;
-    luminaria_type_t last_tipo_luminaria;
+        /* Estrutra que armazena as informações na rede */
+        typedef struct
+        {
+            uint8_t mac[6];
+            uint8_t qtd_luminarias;
+            luminaria_type_t modelo_luminarias;
+        } device_report_info_t;
 
-    /* Defines do filtro */
-    #define RETURN_PONTOS_EM_HORA   "GET|DD:XX_MM_YYYY"
-    #define RETURN_PONTOS_EM_DIAS   "GET|MM:00_XX_YYYY"
-    #define RETURN_PONTOS_EM_MES    "GET|YY:_00_00_0000"
-    #define SET_QTD_LUMINARIA       "SET|qtd_luminaria:XX|id:XXX"
-    #define SET_TYPE_LUMINARIA      "SET|type_luminaria:XX|id:XXX"
+        typedef struct
+        {
+            device_report_info_t *_ptr_devices_info;
+            uint8_t _qnt_devices = 0;
+        } device_ptr_t;
 
-    static const char * _valid_return_api[];
-    static const uint16_t _watts_luminaria[];
-    static API_ModuloRelatorio * _ptr_obj;
-};
+        /* Variaveis */
+        device_ptr_t _devices_info;
+        uint16_t total_lumina_on_mesh;
+        luminaria_type_t last_tipo_luminaria;
+
+        static const uint16_t _watts_luminaria[];
+        static API_ModuloRelatorio *_ptr_obj;
+    };
 
 }
 
