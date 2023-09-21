@@ -29,6 +29,7 @@ namespace Wetzel
         _devices_info._ptr_devices_info = nullptr;
         _devices_info._qnt_devices = 0;
         total_lumina_on_mesh = 0;
+        last_tipo_luminaria = LUM_17K;
         // Carrega os dados se tiver
         if (LoadDataFromNVS())
         {
@@ -38,8 +39,9 @@ namespace Wetzel
         return ESP_OK;
     }
 
-    bool API_ModuloRelatorio::DeliveryDataByDataRequest(char *search_data, size_t serach_size, std::string &return_data)
+    bool API_ModuloRelatorio::DeliveryDataByDataRequest(const char *search_data, size_t serach_size, std::string &return_data)
     {
+        MY_LOGI("Entrou em DeliveryDataByDataRequest");
         // Blindagens
         if (search_data == nullptr || serach_size == 0)
         {
@@ -51,7 +53,11 @@ namespace Wetzel
 
         type_request_http_t index_API = ClassifyMessageReturn(search_data, day, month, year);
 
+        MY_LOGI("Obtem data object");
+
         local_storage *m_data = local_storage::GetObjs();
+
+        MY_LOGI("Executa o switch case");
 
         switch (index_API)
         {
@@ -90,6 +96,9 @@ namespace Wetzel
         default:
             break;
         }
+
+        // Devolve os recursos alocados
+        m_data = m_data->GiveObjs();
         return isOK;
     }
 
@@ -202,6 +211,8 @@ namespace Wetzel
 
     API_ModuloRelatorio::type_request_http_t API_ModuloRelatorio::ClassifyMessageReturn(const char *search_data, uint8_t &day, uint8_t &month, uint8_t &year)
     {
+        MY_LOGI("Entrou em ClassifyMessageReturn");
+
         type_request_http_t result = kReturnErro;
         std::string data = search_data; // Converter o char* para uma string C++
         size_t day_pos = data.find("day=");
@@ -232,6 +243,7 @@ namespace Wetzel
                 result = kReturnHours;
             }
         }
+        MY_LOGI("Resultado do result = %d", (int)result);
         return result;
     }
 

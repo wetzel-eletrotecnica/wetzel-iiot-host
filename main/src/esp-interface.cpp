@@ -23,19 +23,21 @@
 #include "local_storage.h"
 #include "API_ModuloRelatorio.h"
 
-static const char* TAG = __FILE__;
+static const char *TAG = __FILE__;
 
-void uart2_input_task(void* param);
-static void print_system_info_timercb(void* timer);
-static void rssi_check(void* timer);
+void uart2_input_task(void *param);
+static void print_system_info_timercb(void *timer);
+static void rssi_check(void *timer);
 
-extern "C" {
-void app_main();
-}  // 134217756U
+extern "C"
+{
+    void app_main();
+} // 134217756U
 
-void app_main() {
+void app_main()
+{
     uart_config_t uart_config = {
-        .baud_rate = 115200, //230400,
+        .baud_rate = 115200, // 230400,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -56,27 +58,28 @@ void app_main() {
     Serial2.begin(UART_BAUD_RATE);
     pinMode(LED_PIN, OUTPUT);
 
-    Wetzel::WiFi* wifi = Wetzel::WiFi::getInstance();
+    Wetzel::WiFi *wifi = Wetzel::WiFi::getInstance();
     wifi->begin();
     wifi->start(wifi->current_mode());
 
     // IF REPORT
-    Wetzel::CartaoSD* card = Wetzel::CartaoSD::getInstance();
+    Wetzel::CartaoSD *card = Wetzel::CartaoSD::getInstance();
     card->begin(SPI_MOSI_GPIO, SPI_MISO_GPIO, SPI_SCLK_GPIO, SPI_CS_GPIO);
 
     /* Implementação do RTC do esp sem módulo */
-    Wetzel::RealTimeClock* rtc = Wetzel::RealTimeClock::getInstance();
+    Wetzel::RealTimeClock *rtc = Wetzel::RealTimeClock::getInstance();
     rtc->begin();
-    Wetzel::ReportHandler* report_handler =
+    Wetzel::ReportHandler *report_handler =
         Wetzel::ReportHandler::getInstance();
     report_handler->begin();
     // ENDIF
 
     /* Inicia o backend do módulo de relatório */
-    Wetzel::local_storage * m_storage = Wetzel::local_storage::GetObjs();
+    Wetzel::local_storage *m_storage = Wetzel::local_storage::GetObjs();
     m_storage->Begin();
+    m_storage = m_storage->GiveObjs();
 
-    Wetzel::API_ModuloRelatorio * m_relatorio = Wetzel::API_ModuloRelatorio::GetObjs();
+    Wetzel::API_ModuloRelatorio *m_relatorio = Wetzel::API_ModuloRelatorio::GetObjs();
     m_relatorio->Begin();
 
     Wetzel::AsyncServer::begin();
@@ -131,28 +134,33 @@ void app_main() {
     vTaskDelete(NULL);
 }
 
-static void print_system_info_timercb(void* timer) {
+static void print_system_info_timercb(void *timer)
+{
 
     MY_LOGT("INICIALIZANDO PRINT CALLBACK");
     MY_LOGT("System information, free heap: %u", esp_get_free_heap_size());
 
-    if (!heap_caps_check_integrity_all(true)) {
+    if (!heap_caps_check_integrity_all(true))
+    {
         MY_LOGE("At least one heap is corrupt");
     }
 }
 
-char* buffer;
+char *buffer;
 
-static void rssi_check(void* timer) {
+static void rssi_check(void *timer)
+{
     if (xSemaphoreTake(Wetzel::WiFi::_wifi_mutex, 10000 / portTICK_RATE_MS) !=
-        pdTRUE) {
+        pdTRUE)
+    {
         // MY_LOGI("Nao foi possivel pegar o mutex!");
         return;
     }
     // MY_LOGT("Verificando o RSSI");
     wifi_sta_list_t sta;
     esp_err_t err = esp_wifi_ap_get_sta_list(&sta);
-    if (err != ESP_OK) {
+    if (err != ESP_OK)
+    {
         MY_LOGE("esp_wifi_ap_get_sta_list(&sta) error=%d", err);
         return;
     }
@@ -162,7 +170,8 @@ static void rssi_check(void* timer) {
     // Wetzel::AsyncServer::http_requests_received);
     digitalWrite(LED_PIN, sta.num > 0);
 
-    if (sta.num > 0 && sta.sta[0].rssi < MAIN_RSSI_CHECK_TIMER_MIN_RSSI) {
+    if (sta.num > 0 && sta.sta[0].rssi < MAIN_RSSI_CHECK_TIMER_MIN_RSSI)
+    {
         // MY_LOGW("O sinal esta muito fraco");
         esp_wifi_stop();
         vTaskDelay(MAIN_RSSI_CHECK_TIMER_RESTART_DELAY_MS / portTICK_RATE_MS);

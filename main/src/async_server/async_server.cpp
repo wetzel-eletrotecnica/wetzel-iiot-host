@@ -116,28 +116,6 @@ namespace Wetzel
         }
     }
 
-    // TODO analisar e remover se necessário função (unused?)
-    void AsyncServer::begin_task()
-    {
-        BaseType_t xReturned;
-        // xReturned = xTaskCreate(_webserver_task, "_webserver_task", ASYNC_SRV_WB_TASK_STACK_SIZE,
-        //                         NULL, ASYNC_SRV_WB_TASK_PRIORITY, NULL);
-        // if(xReturned != pdPASS) {
-        //     MY_LOGI("Nao foi possivel criar a _webserver_task");
-        //     abort();
-        // }
-        xReturned =
-            xTaskCreate(check_mesh_connection_task, "check_mesh_connection_task",
-                        ASYNC_SRV_CHECK_MESH_TASK_STACK_SIZE, NULL,
-                        ASYNC_SRV_CHECK_MESH_TASK_PRIORITY, NULL);
-
-        if (xReturned != pdPASS)
-        {
-            MY_LOGI("Nao foi possivel criar a _webserver_task");
-            abort();
-        }
-    }
-
     uint16_t AsyncServer::_wait_for_ok(char *response)
     {
         uint32_t tempo = millis();
@@ -150,10 +128,9 @@ namespace Wetzel
             if (Serial2.available())
             {
                 memset(ent, 0, ASYNC_SRV_MSG_LENGTH);
-                uint8_t value;
                 MY_LOGI("Tem dado a ser lido UART2");
                 MY_LOGI("Antes do readBytes");
-                value = Serial2.readBytesUntil(';', ent, ASYNC_SRV_MSG_LENGTH);
+                Serial2.readBytesUntil(';', ent, ASYNC_SRV_MSG_LENGTH);
 
                 if (ent[0] ==
                     '#')
@@ -203,7 +180,7 @@ namespace Wetzel
     void AsyncServer::_send_data_to_sensor(const char *msg)
     {
         Serial2.flush();
-        const uint8_t SEND_LEN = ASYNC_SRV_MSG_LENGTH;
+        const uint16_t SEND_LEN = ASYNC_SRV_MSG_LENGTH; // TODO: Aqui antes era uint8_t mas estava errado
         uint16_t len = strlen(msg);
         uint16_t i = 0;
         uint8_t sum;
@@ -746,7 +723,7 @@ namespace Wetzel
 
         MY_LOGD("Msg code test %u | msg test %s", msg_code_uint8, msg_content);
 
-        esp_err_t err;
+        esp_err_t err = ESP_FAIL;
         // memset(buf, 0, 1500);
 
         // char* msg_response_content = buf;
@@ -779,7 +756,7 @@ namespace Wetzel
             err = msg_handler_rtc_update(msg_content);
             break;
         case REPORT_CONFIG_CODE:
-            err = msg_handler_report_config(msg_content);
+            // err = msg_handler_report_config(msg_content); // TODO: Comentei aqui
             break;
         default:
             MY_LOGE("Código de mensagem inválido");
@@ -860,9 +837,8 @@ namespace Wetzel
 
             if (Serial2.available())
             {
-                uint8_t value;
                 memset(ent, 0, 1499);
-                value = Serial2.readBytesUntil(';', ent, ASYNC_SRV_MSG_LENGTH);
+                Serial2.readBytesUntil(';', ent, ASYNC_SRV_MSG_LENGTH);
                 MY_LOGD("Dado lido2: %s", ent);
                 // se for uma das mensagens de fim, finaliza a requisicao
 

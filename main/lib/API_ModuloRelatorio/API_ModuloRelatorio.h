@@ -14,10 +14,10 @@ namespace Wetzel
     public:
         typedef enum
         {
-            LUM_INDEF = 0,
             LUM_17K,
             LUM_23K,
-            LUM_32K
+            LUM_32K,
+            LUM_INDEF = 255,
         } luminaria_type_t;
 
         typedef enum
@@ -52,7 +52,7 @@ namespace Wetzel
          * @param return_data Resposta do pedido da search_data
          * @return 1 - Sucesso , 0 - Falhou (Deve descartar o resultado)
          */
-        bool DeliveryDataByDataRequest(char *search_data, size_t serach_size, std::string &return_data);
+        bool DeliveryDataByDataRequest(const char *search_data, size_t serach_size, std::string &return_data);
 
         /**
          * @brief Defini o nome número de luminarias na rede
